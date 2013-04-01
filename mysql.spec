@@ -1,6 +1,6 @@
 Name: mysql
-Version: 5.1.47
-Release: 4%{?dist}
+Version: 5.1.52
+Release: 1%{?dist}.1
 Summary: MySQL client programs and shared libraries
 Group: Applications/Databases
 URL: http://www.mysql.com
@@ -35,7 +35,7 @@ Patch2: mysql-errno.patch
 Patch4: mysql-testing.patch
 Patch5: mysql-install-test.patch
 Patch6: mysql-stack-guard.patch
-Patch7: mysql-plugin-bug.patch
+Patch7: mysql-disable-test.patch
 Patch8: mysql-setschedparam.patch
 Patch9: mysql-no-docs.patch
 Patch10: mysql-strmov.patch
@@ -44,7 +44,6 @@ Patch13: mysql-expired-certs.patch
 Patch14: mysql-missing-string-code.patch
 Patch15: mysql-lowercase-bug.patch
 Patch16: mysql-chain-certs.patch
-Patch17: mysql-cve-2010-2008.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: gperf, perl, readline-devel, openssl-devel
@@ -185,7 +184,9 @@ the MySQL sources.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-%patch17 -p1
+
+# workaround for upstream bug #56342
+rm -f mysql-test/t/ssl_8k_key-master.opt
 
 libtoolize --force
 aclocal
@@ -356,7 +357,7 @@ rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/mysql-test-run.pl.1*
 mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
 echo "%{_libdir}/mysql" > $RPM_BUILD_ROOT/etc/ld.so.conf.d/%{name}-%{_arch}.conf
 
-# copy additional docs into build tree so %doc will find them
+# copy additional docs into build tree so %%doc will find them
 cp %{SOURCE6} README.mysql-docs
 
 %clean
@@ -430,11 +431,10 @@ fi
 
 %files libs
 %defattr(-,root,root)
-
+%doc COPYING EXCEPTIONS-CLIENT
 # although the default my.cnf contains only server settings, we put it in the
 # libs package because it can be used for client settings too.
 %config(noreplace) /etc/my.cnf
-
 %dir %{_libdir}/mysql
 %{_libdir}/mysql/libmysqlclient*.so.*
 /etc/ld.so.conf.d/*
@@ -554,6 +554,7 @@ fi
 
 %files embedded
 %defattr(-,root,root)
+%doc COPYING EXCEPTIONS-CLIENT
 %{_libdir}/mysql/libmysqld.so.*
 
 %files embedded-devel
@@ -576,6 +577,17 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Mon Dec 20 2010 Tom Lane <tgl@redhat.com> 5.1.52-1.1
+- Update to MySQL 5.1.52, for various fixes described at
+  http://dev.mysql.com/doc/refman/5.1/en/news-5-1-52.html
+  including numerous small security issues
+Resolves: #652553
+- Sync with current Fedora package; this includes:
+- Duplicate COPYING and EXCEPTIONS-CLIENT in -libs and -embedded subpackages,
+  to ensure they are available when any subset of mysql RPMs are installed,
+  per revised packaging guidelines
+- Allow init script's STARTTIMEOUT/STOPTIMEOUT to be overridden from sysconfig
+
 * Thu Jul 15 2010 Tom Lane <tgl@redhat.com> 5.1.47-4
 - Add backported patch for CVE-2010-2008 (upstream bug 53804)
 Resolves: #614215

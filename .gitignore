@@ -1,9 +1,1 @@
-filter-requires-mysql.sh
-mysql-embedded-check.c
-README.mysql-docs
-my_config.h
-scriptstub.c
-my.cnf
-mysql.init
-generate-tarball.sh
-mysql-5.1.47-nodocs.tar.gz
+mysql-5.1.52-nodocs.tar.gz
